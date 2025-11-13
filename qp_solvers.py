@@ -332,9 +332,13 @@ class PDIPSolver():
                 r1n, r2n, r3n, r4n = self.compute_residuals(x, s, z, y)
                 res2 = float(jnp.linalg.norm(jnp.concatenate([r1n, r2n, r3n, r4n]), 2))
                 mu_now = float((s @ z) / max(self.n_ineq, 1))
-                print(f"it={k:02d} alpha={alpha:.3e} cost={cost:.6e} mu={mu_now:.3e} res2={res2:.3e}")
+                gap = float(s @ z)
+                rdual_norm = float(jnp.linalg.norm(r1n, 2))
+                rpri_vec   = jnp.concatenate([r3n, r4n])
+                rpri_norm  = float(jnp.linalg.norm(rpri_vec, 2))
+                r_feas     = float(jnp.sqrt(rdual_norm**2 + rpri_norm**2))
+                print(f"it={k:02d} alpha={alpha:.3e} cost={cost:.6e} mu={mu_now:.15e} res2={res2:.3e} gap={gap:.15e}")
 
             self.x0, self.s0, self.z0, self.y0 = x, s, z, y
 
         return costs
-
