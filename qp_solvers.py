@@ -9,7 +9,7 @@ class PDIPSolver():
     Follows the implementation of the primal-dual interior point algorithm as found in
         "CVXGEN: a code generator for embedded convex optimization", J. Mattingley and S. Boyd (2012).
     """
-    def __init__(self, max_qp_iter: int = 50, tol: float = 1e-2):
+    def __init__(self, max_qp_iter: int = 50, tol: float = 1e-15):
         """
         Attributes:
             max_qp_iter (int): maximum number of QP iterations
@@ -168,7 +168,7 @@ class PDIPSolver():
         # dx_cc, ds_cc, dz_cc, dy_cc = self.solve_kkt_system(u1, u2, u3, u4, s0, z0)
         return mu, sigma
 
-    def compute_line_search(self, s0: jax.Array, ds: jax.Array, z0: jax.Array, dz: jax.Array, n_steps: int = 500, tol: float = 1e-4):
+    def compute_line_search(self, s0: jax.Array, ds: jax.Array, z0: jax.Array, dz: jax.Array, n_steps: int = 500, tol: float = 1e-15):
         """
 	The line search procedure that ensures s0+alpha*ds >= 0 and z0+alpha*ds >= 0
 
@@ -331,14 +331,24 @@ class PDIPSolver():
             if verbose:
                 r1n, r2n, r3n, r4n = self.compute_residuals(x, s, z, y)
                 res2 = float(jnp.linalg.norm(jnp.concatenate([r1n, r2n, r3n, r4n]), 2))
-                mu_now = float((s @ z) / max(self.n_ineq, 1))
                 gap = float(s @ z)
+                mu_now = float((s @ z) / max(self.n_ineq, 1))
+                r1n, r2n, r3n, r4n = self.compute_residuals(x, s, z, y)
                 rdual_norm = float(jnp.linalg.norm(r1n, 2))
                 rpri_vec   = jnp.concatenate([r3n, r4n])
                 rpri_norm  = float(jnp.linalg.norm(rpri_vec, 2))
                 r_feas     = float(jnp.sqrt(rdual_norm**2 + rpri_norm**2))
-                print(f"it={k:02d} alpha={alpha:.3e} cost={cost:.6e} mu={mu_now:.15e} res2={res2:.3e} gap={gap:.15e}")
 
+                print(
+                    f"it={k:02d} "
+                    f"alpha={alpha:.3e} "
+                    f"cost={cost:.3e} "
+                    f"mu={mu_now:.3e} "
+                    f"gap={gap:.15e} "
+                    f"r_feas={r_feas:.15e} "
+                    f"res2={res2:.3e}"
+                )
             self.x0, self.s0, self.z0, self.y0 = x, s, z, y
 
         return costs
+
